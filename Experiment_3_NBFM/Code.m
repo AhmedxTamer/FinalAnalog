@@ -1,6 +1,30 @@
 clear all; close all; clc;
 fprintf('EXPERIMENT 3: NARROWBAND FM\n');
 
+%% Helper Functions
+function filtered_signal = ideal_lowpass_filter(signal, Fs, cutoff_freq)
+    % IDEAL LOWPASS FILTER (ROBUST VERSION)
+    % Works for row OR column input signals
+
+    signal = signal(:);        % FORCE column vector
+    N = length(signal);
+
+    % Frequency axis (column)
+    freq_axis = linspace(-Fs/2, Fs/2, N).';
+
+    % FFT (column)
+    signal_freq = fftshift(fft(signal));
+
+    % Ideal LPF mask (column)
+    filter_mask = abs(freq_axis) <= cutoff_freq;
+
+    % Apply filter (column .* column)
+    filtered_freq = signal_freq .* filter_mask;
+
+    % Back to time domain
+    filtered_signal = real(ifft(ifftshift(filtered_freq)));
+end
+
 %% ppaths
 project_dir = "/MATLAB Drive/FinalAnalog";
 addpath(project_dir);     % add helper_functions.m
@@ -71,10 +95,10 @@ m_norm = message_resampled / max(abs(message_resampled));
 kf = 2*pi*50;   % rad/s per unit amplitude
 
 % integrate message
-int_m = cumsum(m_norm)/Fs;
+int_m = (cumsum(m_norm)/Fs).';
 
 % NBFM signal
-s_nbfm = cos(2*pi*Fc*t + kf*int_m)';
+s_nbfm = cos(2*pi*Fc*t + kf*int_m);
 
 fprintf('NBFM signal generated\n');
 
@@ -106,7 +130,7 @@ fprintf(' step 9: NBFM demodulation \n');
 
 % differentiator
 diff_signal = diff(s_nbfm);
-diff_signal = [diff_signal; diff_signal(end)];
+diff_signal = [diff_signal diff_signal(end)];
 
 % envelope detector
 envelope = abs(hilbert(diff_signal));
@@ -147,8 +171,3 @@ legend('original message','recovered message');
 xlabel('time (s)'); ylabel('amplitude'); grid on;
 
 saveas(gcf,fullfile(figures_dir,'step 12: time_comparison.png'));
-
-%% step 13: save results(variables) into a .mat file
-fprintf('\n step 13: saving results \n');
-
-save(fullfile(exp3_dir,'nbfm_results.mat'), 's_nbfm','received_audio','beta','kf','Fc','Fs');
