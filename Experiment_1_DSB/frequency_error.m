@@ -1,13 +1,7 @@
 clear all; close all; clc;
 
-%% SETUP PATHS
-fprintf('========================================\n');
-fprintf('EXPERIMENT 1 - FREQUENCY ERROR ANALYSIS\n');
-fprintf('Member 3 - Part A\n');
-fprintf('========================================\n\n');
-
 % Navigate to project root
-project_dir = fileparts(fileparts(pwd));
+project_dir = "/MATLAB Drive/FinalAnalog";
 addpath(fullfile(project_dir, 'Code'));
 
 % Define directories
@@ -16,14 +10,13 @@ figures_dir = fullfile(project_dir, 'Figures', 'Experiment_1_DSB');
 audio_dir = fullfile(project_dir, 'Audio_Samples');
 
 %% STEP 1: LOAD DSB-SC RESULTS
-fprintf('=== STEP 1: Loading DSB-SC Data from Member 2 ===\n');
+fprintf('=== STEP 1: Loading DSB-SC Data===\n');
 
 dsbsc_path = fullfile(results_dir, 'dsb_sc_results.mat');
 filtered_path = fullfile(results_dir, 'filtered_audio.mat');
 
 if ~exist(dsbsc_path, 'file')
-    error(['ERROR: dsb_sc_results.mat not found!\n' ...
-           'Member 2 must run exp1_member2_dsb_sc.m first!']);
+    error(['ERROR: dsb_sc_results.mat not found!\n']);
 end
 
 load(dsbsc_path);      % dsb_sc, message, carrier, t, Fs, Fc, P, Q
@@ -141,7 +134,6 @@ annotation('textbox', [0.15, 0.75, 0.3, 0.15], ...
     'BackgroundColor', 'yellow', 'FontSize', 10, 'FontWeight', 'bold');
 
 saveas(gcf, fullfile(figures_dir, 'exp1_15_frequency_error_beating.png'));
-saveas(gcf, fullfile(figures_dir, 'exp1_15_frequency_error_beating.fig'));
 fprintf('✓ Saved: exp1_15_frequency_error_beating.png\n');
 
 %% STEP 7: ZOOMED VIEW OF ONE BEAT CYCLE
@@ -171,7 +163,6 @@ legend('Received (with error)', 'Original', 'Beat Envelope', 'Location', 'best')
 grid on;
 
 saveas(gcf, fullfile(figures_dir, 'exp1_16_frequency_error_zoomed.png'));
-saveas(gcf, fullfile(figures_dir, 'exp1_16_frequency_error_zoomed.fig'));
 fprintf('✓ Saved: exp1_16_frequency_error_zoomed.png\n');
 
 %% STEP 8: FREQUENCY DOMAIN ANALYSIS
@@ -198,7 +189,6 @@ grid on;
 xlim([0, 5]);
 
 saveas(gcf, fullfile(figures_dir, 'exp1_17_frequency_error_spectrum.png'));
-saveas(gcf, fullfile(figures_dir, 'exp1_17_frequency_error_spectrum.fig'));
 fprintf('✓ Saved: exp1_17_frequency_error_spectrum.png\n');
 
 fprintf('\nSpectrum shows:\n');
@@ -244,9 +234,24 @@ SER_dB = 10*log10(signal_power / mse_freq);
 
 fprintf('Error Metrics:\n');
 fprintf('  Mean Squared Error: %.6f\n', mse_freq);
+fprintf('  Normalized Error: %.4f (%.2f%%)\n', normalized_error, normalized_error*100);
+fprintf('  Signal-to-Error Ratio: %.2f dB\n', SER_dB);
+fprintf('\nError is significant due to beating modulation\n');
 
+%% STEP 11: SAVE RESULTS
+fprintf('\n=== STEP 13: Saving Results ===\n');
+
+save(fullfile(results_dir, 'frequency_error_results.mat'), ...
+     'received_freq_error', 'received_freq_error_audio', ...
+     'Fc_correct', 'Fc_error', 'freq_error_Hz', ...
+     'beating_freq', 'beating_period', ...
+     'mse_freq', 'normalized_error', 'SER_dB', ...
+     'error_signal', 'envelope_beating');
+
+fprintf('✓ Saved: frequency_error_results.mat\n');
 %% HELPER FUNCTION
 function [freq_axis, spectrum] = get_spectrum(signal, Fs)
+    % Returns frequency axis and spectrum of a signal
     N = length(signal);
     freq_axis = linspace(-Fs/2, Fs/2, N);
     spectrum = fftshift(fft(signal));
